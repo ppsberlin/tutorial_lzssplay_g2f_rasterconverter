@@ -1,1 +1,8 @@
 *.asm linguist-language=Assembler
+*.csv linguist-detectable=false
+*.atdb linguist-detectable=false
+*.lst linguist-detectable=false
+*.lab linguist-detectable=false
+*.h* linguist-detectable=false
+*.pmf linguist-detectable=false
+*.scr linguist-detectable=false
