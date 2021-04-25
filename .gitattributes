@@ -1,4 +1,4 @@
-*.asm linguist-language=assembler
+*.asm linguist-language=Assembly
 *.asm linguist-detectable=true
 *.csv linguist-detectable=false
 *.atdb linguist-detectable=false
