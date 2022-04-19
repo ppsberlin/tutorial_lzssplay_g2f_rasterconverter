@@ -9,9 +9,7 @@ BEGIN	equ $2000				;address of first bytes
 PLAYER	equ $a000				;address of LZSS player
 
 ;------------
-	.zpvar	.byte	sixtyhz,regA,regX,regY,count_s
-	.zpvar	.byte	blue,red,yellow,yellow2,purple,colplasm,test,test2,colevent,what,store
-	.zpvar	.word	zeisa,buchst,txtptr,txtptr2,copyto,counter
+	.zpvar	.byte	sixtyhz,count_s
 ;------------
 
 	org BEGIN
