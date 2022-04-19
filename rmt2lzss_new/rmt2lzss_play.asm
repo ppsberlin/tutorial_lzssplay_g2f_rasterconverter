@@ -4,7 +4,7 @@ startet:	16.04.2022
 finished:
 */
 
-	icl '../../atari.hea'
+	icl 'atari.hea'
 
 BEGIN	equ $2000				;address of first bytes
 PLAYER	equ $a000				;address of LZSS player
