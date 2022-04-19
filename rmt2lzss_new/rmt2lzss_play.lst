@@ -1,0 +1,933 @@
+mads 2.1.0 build 8 (23 Dec 19)
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\rmt2lzss_play.asm
+     1 				/*
+     2 				fefmsg		by PPs
+     3 				startet:	16.04.2022
+     4 				finished:
+     5 				*/
+     5
+     6
+     7 					icl '../../atari.hea'
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\..\..\atari.hea
+   284 					opt l+
+     8
+     9 = 2000			BEGIN	equ $2000				;address of first bytes
+    10 = A000			PLAYER	equ $a000				;address of LZSS player
+    11
+    12 				;------------
+    13 					.zpvar	.byte	sixtyhz,regA,regX,regY,count_s
+    14 					.zpvar	.byte	blue,red,yellow,yellow2,purple,colplasm,test,test2,colevent,what,store
+    15 					.zpvar	.word	zeisa,buchst,txtptr,txtptr2,copyto,counter
+    16 				;------------
+    17
+    18 = 0080			SIXTYHZ
+    18 = 0081			REGA
+    18 = 0082			REGX
+    18 = 0083			REGY
+    18 = 0084			COUNT_S
+    18 = 0085			BLUE
+    18 = 0086			RED
+    18 = 0087			YELLOW
+    18 = 0088			YELLOW2
+    18 = 0089			PURPLE
+    18 = 008A			COLPLASM
+    18 = 008B			TEST
+    18 = 008C			TEST2
+    18 = 008D			COLEVENT
+    18 = 008E			WHAT
+    18 = 008F			STORE
+    18 = 0090			ZEISA
+    18 = 0092			BUCHST
+    18 = 0094			TXTPTR
+    18 = 0096			TXTPTR2
+    18 = 0098			COPYTO
+    18 = 009A			COUNTER
+    18 					org BEGIN
+    19 				;------------
+    20 					.proc ant
+    21 FFFF> 2000-20BD> 70 70 + :12	.he 70
+    22 200C 42				.he 42
+    23 200D 00 30			.wo screen
+    24 200F 41				.he 41
+    25 2010 00 20			.wo ant
+    26 					.endp
+    27 				;------------
+    28 2012				.proc main
+    29 2012 20 7A 20			jsr hz_test
+    30 2015 A9 00 8D 2F 02		mva #0 559
+    31 201A 8D 9C 00			sta.w ZPLZS.SongPtr
+    32 201D 85 9E			sta ZPLZS.bit_data
+    33 201F A9 00 8D 30 02 A9 + 	mwa #ant 560
+    34 2029 A9 07			lda #7			;VBI
+    35 202B A2 20			ldx >vbi		;wird
+    36 202D A0 42			ldy <vbi		;jetzt
+    37 202F 20 5C E4			jsr setvbv		;initialisiert
+    38
+    39 2032 A9 40 8D 0E D4		mva #$40 nmien		;VBI an
+    40 2037 A9 22 8D 2F 02		mva #34 559
+    41
+    42 203C 20 D3 A1			jsr init_song
+    43 203F 4C 3F 20			jmp *
+    44 					.endp
+    45 				;------------
+    46 2042				.proc vbi
+    47 2042 A9 00 85 4D			mva #0 77
+    48 2046 20 67 20			jsr mukke
+    49 				;Test ob Ende
+    50 2049 AD 10 D0			lda trig0
+    51 204C F0 13			beq @+
+    52 204E AD 11 D0			lda trig1
+    53 2051 F0 0E			beq @+
+    54 2053 AD 0F D2			lda skctl
+    55 2056 29 04			and #$04
+    56 2058 F0 07			beq @+
+    57 205A AD 1F D0			lda consol
+    58 205D 29 01			and #1
+    59 205F D0 03			bne nixtun
+    60 2061 4C 77 E4		@	jmp $e477	;raus
+    61 2064			nixtun
+    62 2064 4C 62 E4			jmp xitvbv
+    63 					.endp
+    64 				;------------
+    65 2067				.proc mukke
+    66 2067 A5 80			lda sixtyhz
+    67 2069 F0 06			beq itspal
+    68 				*------ ntsc, so we have to use the counter
+    69 206B A5 84			lda count_s
+    70 206D F0 06			beq reset_count
+    71 206F C6 84			dec count_s
+    72 2071			itspal
+    73 				; go for the music
+    74 2071 20 46 A2			jsr play_song	;play the song
+    75 2074 60				rts
+    76 2075			reset_count
+    77 2075 A9 05 85 84			mva #5 count_s
+    78 2079 60				rts
+    79 					.endp
+    80 				;------------
+    81 207A				.proc hz_test
+    82 207A A9 00 8D 2F 02		mva #0 559
+    83 207F 85 84			sta count_s
+    84 2081 A9 07			lda #7				;VBI
+    85 2083 A2 20			ldx >vbi_i			;wird
+    86 2085 A0 BB			ldy <vbi_i			;jetzt
+    87 2087 20 5C E4			jsr setvbv			;initialisiert
+    88 208A A9 22 8D 2F 02		mva #34 559
+    89 208F A9 40 8D 0E D4		mva #$40 nmien			;VBI an
+    90 				;50Hz or 60 Hz?
+    91 2094 A9 00 8D 0B D4		mva #0 vcount
+    92 2099 AD 0B D4		@	lda vcount
+    93 209C C9 00			cmp #0
+    94 209E F0 05			beq w
+    95 20A0 85 84			sta count_s
+    96 20A2 4C 99 20			jmp @-
+    97 20A5			w
+    98 20A5 A5 84			lda count_s
+    99 20A7 C9 9B			cmp #$9b
+   100 20A9 30 07			bmi ntsc
+   101 				;PAL
+   102 20AB A9 00 85 80			mva #0 sixtyhz
+   103 20AF 85 84			sta count_s
+   104 20B1 60				rts
+   105 20B2			ntsc
+   106 20B2 A9 01 85 80			mva #1 sixtyhz
+   107 20B6 A9 00 85 84			mva #0 count_s
+   108 20BA 60				rts
+   109 				;--------
+   110 20BB				.local vbi_i
+   111 20BB 4C 62 E4			jmp xitvbv
+   112 					.endl
+   113 				;--------
+   114 					.endp
+   115 				;------------
+   116 20BE				.align $1000
+   117 3000				.proc screen
+   118 3000-3027> 70 6C 61 79 + 	dta d'play ',d'50Hz RMT2LZSS'*,d'files 50/60Hz + STEREO'
+   119 					.endp
+   120 				;------------
+   121 3028				icl 'sound/play_rmt2lzss.asm'
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\play_rmt2lzss.asm
+     1 				/*
+     2 				RMT2LZSS player based on rensoup and dmsc sources for DLI or VBI usage
+     3 				call as often as needed to have the correct speed (e.g. 1 time/VBI for 50 or 60 Hz speed or 2 times/VBI for 100 or 120 Hz)
+     4 				*/
+     4
+     5
+     6
+     7 				.ifndef PLAYER				;compile to this address
+     8 				PLAYER	= $9000
+     9 				.endif
+    10 				.ifndef POKEY
+    11 				POKEY	= $d200
+    12 				.endif
+    13 				.ifndef POKEY2
+    14 				POKEY2	= $d210
+    15 				.endif
+    16
+    17 3028				.proc ZPLZS
+    18 				/*
+    19 				zero page vars
+    20 				*/
+    20
+    21 3028				.zpvar .word SongPtr
+    22 3028				.zpvar .byte bit_data
+    23 = 009C			SONGPTR
+    23 = 009E			BIT_DATA
+    23 					.endp
+    24
+    25 					org PLAYER
+    26 				/*
+    27 				vars
+    28 				*/
+    28
+    29 A000			SongIdx
+    30 A000-A264> 00			.byte 0
+    31 A001			SongsSLOPtrs
+    32 A001 05				.byte .LO(Song0Start)
+    33 A002			SongsSHIPtrs
+    34 A002 A0				.byte .HI(Song0Start)
+    35 A003			SongsSHIPtrs2
+    36
+    37 A003			SongsELOPtrs
+    38 A003 D3				.byte .LO(Song0End)
+    39 A004			SongsEHIPtrs
+    40 A004 A1				.byte .HI(Song0End)
+    41 				/*
+    42 				song
+    43 				*/
+    43
+    44 A005			Song0Start
+    45 A005 01 00 00 00 00 00 +         ins     'rhythm is a dancer.lz16'	;music file from RMT2LZSS
+    46 A1D3			Song0End
+    47
+    48 				/*
+    49 				init once before play
+    50 				*/
+    50
+    51 A1D3				.proc init_song
+    52 A1D3 20 F1 A1			jsr t_stereo
+    53 A1D6 30 08			bmi present
+    54 A1D8 A9 03 8D 0F D2		mva #3 skctl			;init POKEY
+    55 A1DD 4C ED A1			jmp w
+    56 A1E0			present
+    57 A1E0 A9 03 8D 0F D2		mva #3 skctl			;init POKEY
+    58 A1E5 8D 1F D2			sta skctl+16			;init 2nd POKEY
+    59 A1E8 A9 01 8D 09 AC		mva #1 LZS.stereo
+    60 A1ED 20 23 A2		w	jsr SetNewSongPtrs		;call for initial song pointer
+    61 A1F0 60				rts
+    62 				;---
+    63 A1F1			t_stereo
+    64 A1F1 EE 0E D4			inc $d40e
+    65 A1F4 A9 03			lda #$03
+    66 A1F6 8D 1F D2			sta $d21f
+    67 A1F9 8D 10 D2			sta $d210
+    68 A1FC A2 00			ldx #$00
+    69 A1FE 8E 11 D2			stx $d211
+    70 A201 E8				inx
+    71 A202 8E 1E D2			stx $d21e
+    72
+    73 A205 AE 0B D4 D0 FB		ldx:rne $d40b
+    74
+    75 A20A 8E 19 D2			stx $d219
+    76 A20D AE 0B D4		loop	ldx $d40b
+    77 A210 30 07			bmi stop
+    78 A212 A9 01			lda #$01
+    79 A214 2C 0E D2			bit $d20e
+    80 A217 D0 F4			bne loop
+    81
+    82 A219 A5 10		stop	lda $10
+    83 A21B 8D 0E D2			sta $d20e
+    84 A21E CE 0E D4			dec $d40e
+    85
+    86 A221 8A				txa
+    87 A222 60				rts
+    88 					.endp
+    89
+    90 				/*
+    91 				song pointer
+    92 					-SongSpeed must be 1 to work fine
+    93 				*/
+    93
+    94 = 0001			SongSpeed = 1// 1 = 50/60hz, 2 = 100/120hz, ..., -> 6
+    95
+    96 A223				.proc SetNewSongPtrs
+    97 A223 AE 00 A0			ldx SongIdx
+    98 A226 E0 01			cpx #SongsSHIPtrs2-SongsSHIPtrs
+    99 A228 F0 1B			beq DontSet
+   100 A22A BD 01 A0			lda SongsSLOPtrs,x
+   101 A22D 8D 00 AC			sta LZS.SongStartPtr
+   102 A230 BD 02 A0			lda SongsSHIPtrs,x
+   103 A233 8D 01 AC			sta LZS.SongStartPtr+1
+   104
+   105 A236 BD 03 A0			lda SongsELOPtrs,x
+   106 A239 8D 02 AC			sta LZS.SongEndPtr
+   107 A23C BD 04 A0			lda SongsEHIPtrs,x
+   108 A23F 8D 03 AC			sta LZS.SongEndPtr+1
+   109
+   110 A242 EE 00 A0			inc SongIdx
+   111 A245			DontSet
+   112 A245 60				rts
+   113 					.endp
+   114
+   115 				/*
+   116 				play routine
+   117 					-call this inside VBI or DLI
+   118 				*/
+   118
+   119 A246				.proc play_song
+   120 A246 20 C6 AC			jsr LZSSPlayFrame
+   121 A249 AD 09 AC			lda LZS.stereo
+   122 A24C F0 11			beq mono
+   123 				;stereo
+   124 A24E 20 3E AE			jsr LZSSUpdatePokeyRegisters
+   125
+   126 A251 20 2F AE		w_back	jsr LZSSCheckEndOfSong
+   127 A254 D0 08			bne Continue
+   128 A256 A9 00			lda #0
+   129 A258 8D 07 AC			sta LZS.Initialized
+   130 A25B 20 23 A2			jsr SetNewSongPtrs
+   131 A25E			Continue
+   132 A25E 60				rts
+   133 A25F			mono
+   134 A25F 20 96 AE			jsr LZSSUpdatePokeyRegisters_mono
+   135 A262 4C 51 A2			jmp w_back
+   136 					.endp
+   137 				/*
+   138 				needed player routine
+   139 				*/
+   139
+   140 A265				icl "playlzs16u"
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+     1 				;// code by dmsc, unrolled by rensoupp
+     2 				;
+     3 				; LZSS Compressed SAP player for 16 match bits
+     4 				; --------------------------------------------
+     5 				;
+     6 				; This player uses:
+     7 				;  Match length: 8 bits  (2 to 257)
+     8 				;  Match offset: 8 bits  (1 to 256)
+     9 				;  Min length: 2
+    10 				;  Total match bits: 16 bits
+    11 				;
+    12
+    13 				.ifndef POKEY
+    14 				POKEY = $D200
+    15 				.endif
+    16 				.ifndef POKEY2
+    17 				POKEY2 = $d210
+    18 				.endif
+    19
+    20 				.ifndef LZSS_PLAYER_FIXEDBUF
+    21 A265				.ALIGN $100
+    22 A300			LZSSBuffers
+    23 = A300			    .ds 256 * 9
+    24 				.else
+    25 				LZSSBuffers = LZSS_PLAYER_FIXEDBUF
+    26 				.endif
+    27
+    28 				//--- macros to grab bytes from compressed stream
+    29 				.MACRO GetByteIncY
+    30 				    lda     (ZPLZS.SongPtr),y
+    31 				    iny
+    32 				.ENDM
+    33
+    34 				.MACRO AddByteIncY
+    35 				    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+    36 				    iny
+    37 				.ENDM
+    38
+    39 				;//##########################################################################
+    40 AC00			.LOCAL LZS
+    41 = AC00			SongStartPtr        .ds     2
+    42 = AC02			SongEndPtr          .ds     2
+    43 = AC04			DstBufOffset        .ds     1
+    44 = AC05			chn_bitsInit        .ds     1
+    45 = AC06			chn_bits            .ds     1
+    46 AC07-AED2> 00		Initialized         .byte   0
+    47 AC08 00			DLIDstBufOffset     .byte   0
+    48 AC09 00			stereo		    .byte   0
+    49 				.ENDL
+    50
+    51 				;//##########################################################################
+    52 AC0A			DecodeBufferBytes
+    53 				    ; We are decoding a new match/literal
+    54 AC0A 46 9E		    lsr     ZPLZS.bit_data    ; Get next bit
+    55 AC0C D0 06		    bne     @got_bit
+    56 AC0E			    GetByteIncY         ; Not enough bits, refill!
+Macro: GETBYTEINCY [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AC0E B1 9C		    lda     (ZPLZS.SongPtr),y
+     2 AC10 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    57 AC11 6A			    ror                 ; Extract a new bit and add a 1 at the high bit (from C set above)
+    58 AC12 85 9E		    sta     ZPLZS.bit_data
+    59 AC14			@got_bit:
+    60 AC14			    GetByteIncY         ; Always read a byte, it could mean "match size/offset" or "literal byte"
+Macro: GETBYTEINCY [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AC14 B1 9C		    lda     (ZPLZS.SongPtr),y
+     2 AC16 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    61 AC17 60			    rts
+    62
+    63
+    64 				.MACRO DecodeChannel CH_IDX
+    65 				    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+    66 				    bcs     skip_chn            ; C=1 : skip this channel
+    67 				
+    68 				    lda     SMSet_CHRLo+1
+    69 				SMSet_CMP    
+    70 				    cmp     #$ff                ; (must be reset on init!)
+    71 				SMSet_Branch:    
+    72 				    bne     CopyStoreCH
+    73 				
+    74 				    jsr     DecodeBufferBytes
+    75 				    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    76 				
+    77 				    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+    78 				
+    79 				    AddByteIncY
+    80 				    sta     SMSet_CMP+1  ; Store in "copy length"
+    81 				
+    82 				CopyStoreCH:
+    83 				    inc     SMSet_CHRLo+1
+    84 				SMSet_CHRLo    
+    85 				    lda     LZSSBuffers+:CH_IDX*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    86 				
+    87 				store:
+    88 				;    sta     POKEY+:CH_IDX      ; Store to output and buffer
+    89 				    sta     LZSSBuffers+:CH_IDX*256,x
+    90 				skip_chn    
+    91 				.ENDM
+    92
+    93 				;.print (LblDecodeChannel7-LblDecodeChannel8)
+    94 				;.error ((LblDecodeChannel7-LblDecodeChannel8)>32)
+    95
+    96 				;//##########################################################################
+    97 				//--- update song pointer each frame (we can never move more than 255 bytes per frame even at 200hz, max is 3 bytes * 9 channels * 4 updates = 108 bytes )
+    98
+    99 				// IN Y: ZPLZS.SrcBufOffset
+   100 AC18			UpdateLZSPtr	
+   101 AC18 98			    tya
+   102 AC19 18				clc
+   103 AC1A 65 9C			adc	ZPLZS.SongPtr
+   104 AC1C 85 9C			sta	ZPLZS.SongPtr
+   105 AC1E 90 02			bcc @NoI
+   106 AC20 E6 9D			inc	ZPLZS.SongPtr+1
+   107 AC22			@NoI	
+   108 AC22 60				rts
+   109
+   110 				;//##########################################################################
+   111
+   112 AC23			LZSSReset
+   113 AC23 A9 01			lda		#1
+   114 AC25 85 9E			sta		ZPLZS.bit_data            ;// bits to decide when to grab new data from the compressed stream
+   115 AC27 8D 07 AC		    sta     LZS.Initialized           ;// flag decoder as initialized
+   116 					
+   117 				    //--- set song ptr
+   118 AC2A AD 01 AC		    lda     LZS.SongStartPtr+1
+   119 AC2D 85 9D		    sta     ZPLZS.SongPtr+1
+   120 AC2F AD 00 AC		    lda     LZS.SongStartPtr
+   121 AC32 85 9C		    sta     ZPLZS.SongPtr
+   122
+   123 				    //--- set dest offset in decompressed streams
+   124 AC34 A0 00			ldy		#0
+   125 AC36 8C 04 AC		    sty     LZS.DstBufOffset   
+   126
+   127 				    ;//--- 1st frame of data is at offset 255 (1st frame is always stored uncompressed)
+   128 AC39 A9 FF		    lda     #255
+   129 AC3B 8D 08 AC		    sta     LZS.DLIDstBufOffset     
+   130
+   131 				    ;// get first byte which contains channels mask
+   132 AC3E			    GetByteIncY
+Macro: GETBYTEINCY [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AC3E B1 9C		    lda     (ZPLZS.SongPtr),y
+     2 AC40 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   133 AC41 8D 05 AC		    sta     LZS.chn_bitsInit
+   134 AC44 8D 06 AC		    sta     LZS.chn_bits
+   135
+   136 				    //--- reset initial value in arrays/decoder code (force CMP test to equal to take the path for decoding new bytes)    
+   137 AC47 AD 03 AD		    lda     DecodeChannel0.SMSet_CHRLo+1
+   138 AC4A 8D EE AC		    sta     DecodeChannel0.SMSet_CMP+1
+   139 AC4D AD 26 AD		    lda     DecodeChannel1.SMSet_CHRLo+1
+   140 AC50 8D 11 AD		    sta     DecodeChannel1.SMSet_CMP+1
+   141 AC53 AD 49 AD		    lda     DecodeChannel2.SMSet_CHRLo+1
+   142 AC56 8D 34 AD		    sta     DecodeChannel2.SMSet_CMP+1
+   143 AC59 AD 6C AD		    lda     DecodeChannel3.SMSet_CHRLo+1
+   144 AC5C 8D 57 AD		    sta     DecodeChannel3.SMSet_CMP+1
+   145 AC5F AD 8F AD		    lda     DecodeChannel4.SMSet_CHRLo+1
+   146 AC62 8D 7A AD		    sta     DecodeChannel4.SMSet_CMP+1
+   147 AC65 AD B2 AD		    lda     DecodeChannel5.SMSet_CHRLo+1
+   148 AC68 8D 9D AD		    sta     DecodeChannel5.SMSet_CMP+1
+   149 AC6B AD D5 AD		    lda     DecodeChannel6.SMSet_CHRLo+1
+   150 AC6E 8D C0 AD		    sta     DecodeChannel6.SMSet_CMP+1
+   151 AC71 AD F8 AD		    lda     DecodeChannel7.SMSet_CHRLo+1
+   152 AC74 8D E3 AD		    sta     DecodeChannel7.SMSet_CMP+1
+   153 AC77 AD 1B AE		    lda     DecodeChannel8.SMSet_CHRLo+1
+   154 AC7A 8D 06 AE		    sta     DecodeChannel8.SMSet_CMP+1
+   155
+   156 AC7D A9 AB		    lda     #.HI(LZSSBuffers+$100*8)
+   157 AC7F 8D 96 AC		    sta     @SMSet_LZSSBuf+2
+   158
+   159 AC82 A2 08		    ldx     #9-1
+   160 AC84			@SetFirstFrame 
+   161 AC84			    GetByteIncY   
+Macro: GETBYTEINCY [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AC84 B1 9C		    lda     (ZPLZS.SongPtr),y
+     2 AC86 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   162
+   163 AC87 4E 06 AC		    lsr     LZS.chn_bits
+   164 AC8A 90 08		    bcc     @DontSetPokey
+   165 AC8C 9D 00 D2		    sta     POKEY,x                 ;// channel was not compressed, write to Pokey just once
+   166 AC8F 9D 10 D2			sta POKEY2,x
+   167 AC92 B0 03		    bcs     @DontSetBuffer
+   168 AC94			@DontSetPokey    
+   169 AC94			@SMSet_LZSSBuf    
+   170 AC94 8D FF AB		    sta     LZSSBuffers+$100*8+255    ;// channel was compressed, write first value at offset 255
+   171 AC97			@DontSetBuffer    
+   172 AC97 CE 96 AC		    dec     @SMSet_LZSSBuf+2        ;// next buffer
+   173 AC9A CA			    dex 
+   174 AC9B 10 E7		    bpl     @SetFirstFrame
+   175 				    
+   176 				    //--- update src stream ptr
+   177 AC9D 20 18 AC			jsr     UpdateLZSPtr
+   178 				    //---
+   179 				;    jmp     CreateChannelSkipCode       
+   180
+   181 				;//-------------------------------------------------------------------------
+   182 				;//--- called during song reset to modify NMI code that sends data to pokey
+   183 				;//--- this changes writes to pokey (STA) to reads (LDA) when channels are skipped - could be a problem when reading POT stuff ????
+   184
+   185
+   186 ACA0			CreateChannelSkipCode
+   187 ACA0			.LOCAL
+   188 ACA0 AD 05 AC		    lda     LZS.chn_bitsInit
+   189
+   190 ACA3			SMSet_chn_bitsInit
+   191 ACA3 C9 00		    cmp     #0
+   192 ACA5 F0 1E		    beq     NoNeedToReinit          ;// same mask as previous song
+   193 ACA7 8D A4 AC		    sta     SMSet_chn_bitsInit+1
+   194 ACAA 8D 06 AC		    sta     LZS.chn_bits
+   195
+   196 ACAD A2 07		    ldx     #9-1-1
+   197 ACAF A0 00		    ldy     #0
+   198
+   199 ACB1			NextChannel
+   200 ACB1 A9 8D		    lda     #$8D    ;// STA ABS
+   201 ACB3 0E 06 AC		    asl     LZS.chn_bits
+   202 ACB6 90 03		    bcc     @WriteChannel
+   203 ACB8 A9 AD		    lda     #$AD    ;// LDA ABS     ;// change the write to pokey to a read 
+   204 ACBA 18			    clc
+   205 ACBB			@WriteChannel
+   206 ACBB 99 50 AE		    sta     SMSet_WritePokey0,y
+   207
+   208 ACBE 98			    tya
+   209 ACBF 69 09		    adc     #SMSet_WritePokey1-SMSet_WritePokey0
+   210 ACC1 A8			    tay
+   211
+   212 ACC2 CA			    dex
+   213 ACC3 10 EC		    bpl     NextChannel
+   214 ACC5			NoNeedToReinit
+   215 ACC5 60			    rts
+   216 				.ENDL
+   217
+   218 				;//##########################################################################
+   219 				;//--- Method 1: play a single update for the current frame 
+   220 				;//--- when CPU usage isn't important and it's ok to poll VCOUNT to wait for the next update
+   221
+   222 ACC6			LZSSPlayFrame:    
+   223 ACC6 AD 04 AC		    lda     LZS.DstBufOffset
+   224 ACC9 8D 08 AC		    sta     LZS.DLIDstBufOffset
+   225
+   226 ACCC A2 01		    ldx     #1
+   227 ACCE AD 07 AC		    lda     LZS.Initialized
+   228 ACD1 D0 04		    bne     LZSSPlay1Frame
+   229 				    //--- (re)init song 
+   230 ACD3 20 23 AC		    jsr     LZSSReset
+   231 ACD6 60			    rts
+   232
+   233
+   234 				;//##########################################################################
+   235 				;//--- Method 2: play all updates for the current frame (depending on song speed)
+   236 				;//--- should be called at during VBI, so that only Pokey register updates are done during DLis
+   237 				/*
+   238 				LZSSPlayFrames:    
+   239 				    lda     LZS.DstBufOffset
+   240 				    sta     LZS.DLIDstBufOffset
+   241
+   242 				    ldx     SongSpeed
+   243
+   244 					lda		LZS.Initialized
+   245 					bne		@Initialized
+   246 				    //--- (re)init song 
+   247 				    jsr     LZSSReset
+   248 				    //--- have multiple pokey frames to play ?
+   249 				    ldx     SongSpeed
+   250 				    dex
+   251 				    bne     @Initialized
+   252 				    rts
+   253 				@Initialized
+   254 				*/
+   254
+   255
+   256 ACD7			LZSSPlay1Frame
+   257 ACD7 8E 27 AE		    stx     SMSet_PlayCounter+1
+   258
+   259 ACDA AE 04 AC		    ldx     LZS.DstBufOffset
+   260
+   261 ACDD AD 05 AC		    lda     LZS.chn_bitsInit
+   262 ACE0 8D 06 AC		    sta     LZS.chn_bits
+   263 				    
+   264 ACE3 A0 00			ldy     #0     ;// source offset in compressed data
+   265 				    
+   266 				    ; Loop through all "channels", one for each POKEY register
+   267
+   268 ACE5			LblDecodeChannel8
+   269 ACE5			    DecodeChannel 8
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 ACE5 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 ACE8 B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 ACEA AD 03 AD		    lda     SMSet_CHRLo+1
+     5 ACED			SMSet_CMP    
+     6 ACED C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 ACEF			SMSet_Branch:    
+     8 ACEF D0 0E		    bne     CopyStoreCH
+    10 ACF1 20 0A AC		    jsr     DecodeBufferBytes
+    11 ACF4 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 ACF6 8D 03 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 ACF9 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 ACFB C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 ACFC 8D EE AC		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 ACFF			CopyStoreCH:
+    19 ACFF EE 03 AD		    inc     SMSet_CHRLo+1
+    20 AD02			SMSet_CHRLo    
+    21 AD02 AD 00 AB		    lda     LZSSBuffers+8*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AD05			store:
+    25 AD05 9D 00 AB		    sta     LZSSBuffers+8*256,x
+    26 AD08			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   270 AD08			LblDecodeChannel7    
+   271 AD08			    DecodeChannel 7
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AD08 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AD0B B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AD0D AD 26 AD		    lda     SMSet_CHRLo+1
+     5 AD10			SMSet_CMP    
+     6 AD10 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AD12			SMSet_Branch:    
+     8 AD12 D0 0E		    bne     CopyStoreCH
+    10 AD14 20 0A AC		    jsr     DecodeBufferBytes
+    11 AD17 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 AD19 8D 26 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 AD1C 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 AD1E C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 AD1F 8D 11 AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 AD22			CopyStoreCH:
+    19 AD22 EE 26 AD		    inc     SMSet_CHRLo+1
+    20 AD25			SMSet_CHRLo    
+    21 AD25 AD 00 AA		    lda     LZSSBuffers+7*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AD28			store:
+    25 AD28 9D 00 AA		    sta     LZSSBuffers+7*256,x
+    26 AD2B			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   272 AD2B			    DecodeChannel 6
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AD2B 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AD2E B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AD30 AD 49 AD		    lda     SMSet_CHRLo+1
+     5 AD33			SMSet_CMP    
+     6 AD33 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AD35			SMSet_Branch:    
+     8 AD35 D0 0E		    bne     CopyStoreCH
+    10 AD37 20 0A AC		    jsr     DecodeBufferBytes
+    11 AD3A B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 AD3C 8D 49 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 AD3F 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 AD41 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 AD42 8D 34 AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 AD45			CopyStoreCH:
+    19 AD45 EE 49 AD		    inc     SMSet_CHRLo+1
+    20 AD48			SMSet_CHRLo    
+    21 AD48 AD 00 A9		    lda     LZSSBuffers+6*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AD4B			store:
+    25 AD4B 9D 00 A9		    sta     LZSSBuffers+6*256,x
+    26 AD4E			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   273 AD4E			    DecodeChannel 5
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AD4E 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AD51 B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AD53 AD 6C AD		    lda     SMSet_CHRLo+1
+     5 AD56			SMSet_CMP    
+     6 AD56 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AD58			SMSet_Branch:    
+     8 AD58 D0 0E		    bne     CopyStoreCH
+    10 AD5A 20 0A AC		    jsr     DecodeBufferBytes
+    11 AD5D B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 AD5F 8D 6C AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 AD62 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 AD64 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 AD65 8D 57 AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 AD68			CopyStoreCH:
+    19 AD68 EE 6C AD		    inc     SMSet_CHRLo+1
+    20 AD6B			SMSet_CHRLo    
+    21 AD6B AD 00 A8		    lda     LZSSBuffers+5*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AD6E			store:
+    25 AD6E 9D 00 A8		    sta     LZSSBuffers+5*256,x
+    26 AD71			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   274 AD71			    DecodeChannel 4
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AD71 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AD74 B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AD76 AD 8F AD		    lda     SMSet_CHRLo+1
+     5 AD79			SMSet_CMP    
+     6 AD79 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AD7B			SMSet_Branch:    
+     8 AD7B D0 0E		    bne     CopyStoreCH
+    10 AD7D 20 0A AC		    jsr     DecodeBufferBytes
+    11 AD80 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 AD82 8D 8F AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 AD85 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 AD87 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 AD88 8D 7A AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 AD8B			CopyStoreCH:
+    19 AD8B EE 8F AD		    inc     SMSet_CHRLo+1
+    20 AD8E			SMSet_CHRLo    
+    21 AD8E AD 00 A7		    lda     LZSSBuffers+4*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AD91			store:
+    25 AD91 9D 00 A7		    sta     LZSSBuffers+4*256,x
+    26 AD94			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   275 AD94			    DecodeChannel 3
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 AD94 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AD97 B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AD99 AD B2 AD		    lda     SMSet_CHRLo+1
+     5 AD9C			SMSet_CMP    
+     6 AD9C C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AD9E			SMSet_Branch:    
+     8 AD9E D0 0E		    bne     CopyStoreCH
+    10 ADA0 20 0A AC		    jsr     DecodeBufferBytes
+    11 ADA3 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 ADA5 8D B2 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 ADA8 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 ADAA C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 ADAB 8D 9D AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 ADAE			CopyStoreCH:
+    19 ADAE EE B2 AD		    inc     SMSet_CHRLo+1
+    20 ADB1			SMSet_CHRLo    
+    21 ADB1 AD 00 A6		    lda     LZSSBuffers+3*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 ADB4			store:
+    25 ADB4 9D 00 A6		    sta     LZSSBuffers+3*256,x
+    26 ADB7			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   276 ADB7			    DecodeChannel 2
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 ADB7 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 ADBA B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 ADBC AD D5 AD		    lda     SMSet_CHRLo+1
+     5 ADBF			SMSet_CMP    
+     6 ADBF C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 ADC1			SMSet_Branch:    
+     8 ADC1 D0 0E		    bne     CopyStoreCH
+    10 ADC3 20 0A AC		    jsr     DecodeBufferBytes
+    11 ADC6 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 ADC8 8D D5 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 ADCB 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 ADCD C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 ADCE 8D C0 AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 ADD1			CopyStoreCH:
+    19 ADD1 EE D5 AD		    inc     SMSet_CHRLo+1
+    20 ADD4			SMSet_CHRLo    
+    21 ADD4 AD 00 A5		    lda     LZSSBuffers+2*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 ADD7			store:
+    25 ADD7 9D 00 A5		    sta     LZSSBuffers+2*256,x
+    26 ADDA			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   277 ADDA			    DecodeChannel 1
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 ADDA 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 ADDD B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 ADDF AD F8 AD		    lda     SMSet_CHRLo+1
+     5 ADE2			SMSet_CMP    
+     6 ADE2 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 ADE4			SMSet_Branch:    
+     8 ADE4 D0 0E		    bne     CopyStoreCH
+    10 ADE6 20 0A AC		    jsr     DecodeBufferBytes
+    11 ADE9 B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 ADEB 8D F8 AD		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 ADEE 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 ADF0 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 ADF1 8D E3 AD		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 ADF4			CopyStoreCH:
+    19 ADF4 EE F8 AD		    inc     SMSet_CHRLo+1
+    20 ADF7			SMSet_CHRLo    
+    21 ADF7 AD 00 A4		    lda     LZSSBuffers+1*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 ADFA			store:
+    25 ADFA 9D 00 A4		    sta     LZSSBuffers+1*256,x
+    26 ADFD			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   278 ADFD			    DecodeChannel 0
+Macro: DECODECHANNEL [Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm]
+     1 ADFD 4E 06 AC		    lsr     LZS.chn_bits        ; TODO: use SM code to set a branch ?
+     2 AE00 B0 1E		    bcs     skip_chn            ; C=1 : skip this channel
+     4 AE02 AD 1B AE		    lda     SMSet_CHRLo+1
+     5 AE05			SMSet_CMP    
+     6 AE05 C9 FF		    cmp     #$ff                ; (must be reset on init!)
+     7 AE07			SMSet_Branch:    
+     8 AE07 D0 0E		    bne     CopyStoreCH
+    10 AE09 20 0A AC		    jsr     DecodeBufferBytes
+    11 AE0C B0 0F		    bcs     store               ; Bit = 1 is "literal", bit = 0 is "match"
+    13 AE0E 8D 1B AE		    sta     SMSet_CHRLo+1       ; Store in "copy pos"
+     1 AE11 71 9C		    adc     (ZPLZS.SongPtr),y     ;// make sure C is clear
+     2 AE13 C8			    iny
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+    16 AE14 8D 06 AE		    sta     SMSet_CMP+1  ; Store in "copy length"
+    18 AE17			CopyStoreCH:
+    19 AE17 EE 1B AE		    inc     SMSet_CHRLo+1
+    20 AE1A			SMSet_CHRLo    
+    21 AE1A AD 00 A3		    lda     LZSSBuffers+0*256 ; Now, read old data, jump to data store ; (low byte must be reset on init !)
+    23 AE1D			store:
+    25 AE1D 9D 00 A3		    sta     LZSSBuffers+0*256,x
+    26 AE20			skip_chn    
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   279 AE20 20 18 AC		    jsr     UpdateLZSPtr
+   280
+   281 AE23 EE 04 AC		    inc     LZS.DstBufOffset
+   282
+   283 AE26			SMSet_PlayCounter
+   284 AE26 A2 FF		    ldx     #$ff
+   285 AE28 CA			    dex
+   286 AE29 F0 03		    beq     @NoMoreFrame
+   287 AE2B 4C D7 AC		    jmp     LZSSPlay1Frame
+   288 AE2E			@NoMoreFrame
+   289 AE2E 60			    rts
+   290
+   291 				;//##########################################################################
+   292 				;//--- out Z flag: clear = end of song
+   293
+   294 AE2F			LZSSCheckEndOfSong
+   295 				    //--- check end of song
+   296 AE2F A5 9D		    lda     ZPLZS.SongPtr + 1
+   297 AE31 CD 03 AC		    cmp     LZS.SongEndPtr+1
+   298 AE34 D0 07		    bne     @NotEnd
+   299 AE36 A5 9C		    lda     ZPLZS.SongPtr
+   300 AE38 CD 02 AC		    cmp     LZS.SongEndPtr
+   301 AE3B D0 00		    bne     @NotEnd
+   302 AE3D			@NotEnd    
+   303 AE3D 60			    rts
+   304
+   305 				;//##########################################################################
+   306 				//--- send decompressed data to pokey
+   307
+   308 AE3E			LZSSUpdatePokeyRegisters
+   309 				    //--- get offset into decoded buffers where lasts bytes were written to
+   310 AE3E AE 08 AC		    ldx     LZS.DLIDstBufOffset
+   311 AE41 EE 08 AC		    inc     LZS.DLIDstBufOffset
+   312
+   313 				    ;//--- always update first register because always part of the compressed data
+   314 AE44 BD 00 A3		    lda    LZSSBuffers+0*256,x      
+   315 AE47 8D 10 D2			sta POKEY2+0
+   316 AE4A 8D 00 D2		    sta    POKEY+0
+   317 				    //---
+   318 AE4D			UpdatePokeyRegisters1
+   319 				.REPT 8 #
+   320 				    LDA    LZSSBUFFERS+(#+1)*256,X    
+   321 				SMSET_WRITEPOKEY:1
+   322 				    STA	POKEY2+(#+1)
+   323 				    STA    POKEY+(#+1)
+   324 				.ENDR  
+   324 				.ENDR  
+Source: REPT
+   320 AE4D BD 00 A4		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE50			SMSET_WRITEPOKEY0
+   320 AE50 8D 11 D2		    STA	POKEY2+(#+1)
+   320 AE53 8D 01 D2		    STA    POKEY+(#+1)
+   320 AE56 BD 00 A5		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE59			SMSET_WRITEPOKEY1
+   320 AE59 8D 12 D2		    STA	POKEY2+(#+1)
+   320 AE5C 8D 02 D2		    STA    POKEY+(#+1)
+   320 AE5F BD 00 A6		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE62			SMSET_WRITEPOKEY2
+   320 AE62 8D 13 D2		    STA	POKEY2+(#+1)
+   320 AE65 8D 03 D2		    STA    POKEY+(#+1)
+   320 AE68 BD 00 A7		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE6B			SMSET_WRITEPOKEY3
+   320 AE6B 8D 14 D2		    STA	POKEY2+(#+1)
+   320 AE6E 8D 04 D2		    STA    POKEY+(#+1)
+   320 AE71 BD 00 A8		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE74			SMSET_WRITEPOKEY4
+   320 AE74 8D 15 D2		    STA	POKEY2+(#+1)
+   320 AE77 8D 05 D2		    STA    POKEY+(#+1)
+   320 AE7A BD 00 A9		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE7D			SMSET_WRITEPOKEY5
+   320 AE7D 8D 16 D2		    STA	POKEY2+(#+1)
+   320 AE80 8D 06 D2		    STA    POKEY+(#+1)
+   320 AE83 BD 00 AA		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE86			SMSET_WRITEPOKEY6
+   320 AE86 8D 17 D2		    STA	POKEY2+(#+1)
+   320 AE89 8D 07 D2		    STA    POKEY+(#+1)
+   320 AE8C BD 00 AB		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   320 AE8F			SMSET_WRITEPOKEY7
+   320 AE8F 8D 18 D2		    STA	POKEY2+(#+1)
+   320 AE92 8D 08 D2		    STA    POKEY+(#+1)
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   325
+   326 AE95 60			    rts
+   327 				;--- for mono replay
+   328 AE96				.proc LZSSUpdatePokeyRegisters_mono
+   329 				    //--- get offset into decoded buffers where lasts bytes were written to
+   330 AE96 AE 08 AC		    ldx     LZS.DLIDstBufOffset
+   331 AE99 EE 08 AC		    inc     LZS.DLIDstBufOffset
+   332
+   333 				    ;//--- always update first register because always part of the compressed data
+   334 AE9C BD 00 A3		    lda    LZSSBuffers+0*256,x      
+   335 AE9F 8D 00 D2		    sta    POKEY+0
+   336 				    //---
+   337 AEA2			UpdatePokeyRegisters1
+   338 				.REPT 8 #
+   339 				    LDA    LZSSBUFFERS+(#+1)*256,X    
+   340 				SMSET_WRITEPOKEY:1
+   341 				    STA    POKEY+(#+1)
+   342 				.ENDR  
+   342 				.ENDR  
+Source: REPT
+   339 AEA2 BD 00 A4		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEA5			SMSET_WRITEPOKEY0
+   339 AEA5 8D 01 D2		    STA    POKEY+(#+1)
+   339 AEA8 BD 00 A5		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEAB			SMSET_WRITEPOKEY1
+   339 AEAB 8D 02 D2		    STA    POKEY+(#+1)
+   339 AEAE BD 00 A6		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEB1			SMSET_WRITEPOKEY2
+   339 AEB1 8D 03 D2		    STA    POKEY+(#+1)
+   339 AEB4 BD 00 A7		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEB7			SMSET_WRITEPOKEY3
+   339 AEB7 8D 04 D2		    STA    POKEY+(#+1)
+   339 AEBA BD 00 A8		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEBD			SMSET_WRITEPOKEY4
+   339 AEBD 8D 05 D2		    STA    POKEY+(#+1)
+   339 AEC0 BD 00 A9		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEC3			SMSET_WRITEPOKEY5
+   339 AEC3 8D 06 D2		    STA    POKEY+(#+1)
+   339 AEC6 BD 00 AA		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AEC9			SMSET_WRITEPOKEY6
+   339 AEC9 8D 07 D2		    STA    POKEY+(#+1)
+   339 AECC BD 00 AB		    LDA    LZSSBUFFERS+(#+1)*256,X    
+   339 AECF			SMSET_WRITEPOKEY7
+   339 AECF 8D 08 D2		    STA    POKEY+(#+1)
+Source: D:\Onedrive\WUDSN\Workspace\Atari800\pps\g2f_raster_lzss_sound_scroll\rmt2lzss_new\sound\playlzs16u.asm
+   343
+   344 AED2 60			    rts
+   345 				    	.endp
+   122 				;------------
+   123 02E0-02E1> 12 20			run main

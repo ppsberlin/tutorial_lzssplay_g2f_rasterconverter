@@ -1,0 +1,7 @@
+.sourcemode on
+.echo
+.echo "Loading executable..."
+.echo
+bc *
+.onexerun .echo "Launching executable..."
+bp "`D:\Onedrive\WUDSN\Workspace\Atari800\pps\nyd2021\bars\bars_cart.asm:27`"
