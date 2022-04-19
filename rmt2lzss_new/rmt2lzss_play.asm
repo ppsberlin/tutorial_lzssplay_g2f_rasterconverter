@@ -1,7 +1,6 @@
 /*
-fefmsg		by PPs
-startet:	16.04.2022
-finished:
+rmt2lzss_new	by PPs
+started:	19.04.2022
 */
 
 	icl 'atari.hea'
