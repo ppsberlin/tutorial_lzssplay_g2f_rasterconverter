@@ -36,7 +36,9 @@ PLAYER	equ $a000				;address of LZSS player
 	mva #$40 nmien		;VBI an
 	mva #34 559
 
+	sei	;--- important for correct stereo detection!!!
 	jsr init_song
+	cli	;--- interrupts are allowed now again
 	jmp *
 	.endp
 ;------------
